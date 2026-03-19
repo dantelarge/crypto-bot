@@ -24,14 +24,14 @@ function toId(symbol) {
   return id;
 }
 
-// Map interval → CoinGecko days param for OHLC
-function intervalToDays(interval) {
+// Map interval → { days, interval } for market_chart endpoint
+function intervalToParams(interval) {
   switch (interval) {
-    case '1h':  return 1;
-    case '4h':  return 7;
-    case '1d':  return 90;
-    case '1w':  return 365;
-    default:    return 7;
+    case '1h':  return { days: 14,  interval: 'hourly' };
+    case '4h':  return { days: 60,  interval: 'hourly' };
+    case '1d':  return { days: 365, interval: 'daily'  };
+    case '1w':  return { days: 730, interval: 'daily'  };
+    default:    return { days: 14,  interval: 'hourly' };
   }
 }
 
@@ -88,26 +88,25 @@ async function fetchTicker24hr(symbol) {
   };
 }
 
-// Fetch historical OHLC candles
-// CoinGecko returns: [timestamp, open, high, low, close]
+// Fetch historical price data using market_chart (more reliable on free tier)
 async function fetchKlines(symbol, interval = '1h', limit = 500) {
   const id = toId(symbol);
-  const days = intervalToDays(interval);
-  const res = await axios.get(`${BASE}/coins/${id}/ohlc`, {
-    params: { vs_currency: 'usd', days }
+  const { days, interval: cgInterval } = intervalToParams(interval);
+  const res = await axios.get(`${BASE}/coins/${id}/market_chart`, {
+    params: { vs_currency: 'usd', days, interval: cgInterval }
   });
 
-  const candles = res.data.map(k => ({
-    openTime: k[0],
-    open:  k[1],
-    high:  k[2],
-    low:   k[3],
-    close: k[4],
-    volume: 0,
-    closeTime: k[0]
-  }));
+  const prices = res.data.prices; // [[timestamp, price], ...]
 
-  // Return last `limit` candles
+  const candles = prices.map((p, i, arr) => {
+    const close = p[1];
+    const open  = i > 0 ? arr[i - 1][1] : close;
+    // Approximate high/low from open and close
+    const high  = Math.max(open, close) * 1.003;
+    const low   = Math.min(open, close) * 0.997;
+    return { openTime: p[0], open, high, low, close, volume: 0, closeTime: p[0] };
+  });
+
   return candles.slice(-limit);
 }
 
