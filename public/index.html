@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Bot — Dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">&#x1F916; Crypto Bot</span>
+      <span class="mode-badge" id="modeBadge">PAPER</span>
+    </div>
+    <div class="header-right">
+      <span class="ws-status" id="wsStatus" title="Live connection">&#x25CF; Connecting...</span>
+      <button class="icon-btn" id="themeToggle" title="Toggle dark mode">&#x263D;</button>
+    </div>
+  </header>
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-btn active" data-page="dashboard">Dashboard</button>
+    <button class="nav-btn" data-page="backtest">Backtest</button>
+    <button class="nav-btn" data-page="portfolio">Portfolio</button>
+    <button class="nav-btn" data-page="trades">Trade History</button>
+  </nav>
+
+  <!-- MAIN -->
+  <main class="main">
+
+    <!-- ── DASHBOARD PAGE ── -->
+    <section id="page-dashboard" class="page active">
+      <div class="price-grid" id="priceGrid">
+        <!-- Price cards injected by JS -->
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+        <div class="card skeleton"></div>
+      </div>
+
+      <div class="chart-card card">
+        <div class="chart-header">
+          <div>
+            <h2 id="chartTitle">BTC/USDT</h2>
+            <span class="subtitle" id="chartSubtitle">Loading chart...</span>
+          </div>
+          <div class="chart-controls">
+            <select id="chartSymbol">
+              <option value="BTCUSDT">BTC/USDT</option>
+              <option value="ETHUSDT">ETH/USDT</option>
+              <option value="BNBUSDT">BNB/USDT</option>
+              <option value="SOLUSDT">SOL/USDT</option>
+              <option value="XRPUSDT">XRP/USDT</option>
+            </select>
+            <select id="chartInterval">
+              <option value="1h">1 Hour</option>
+              <option value="4h">4 Hours</option>
+              <option value="1d">1 Day</option>
+              <option value="1w">1 Week</option>
+            </select>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas id="priceChart"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── BACKTEST PAGE ── -->
+    <section id="page-backtest" class="page">
+      <div class="card backtest-form-card">
+        <h2>&#x1F4CA; Backtest a Strategy</h2>
+        <p class="subtitle">Test how a strategy would have performed on historical data before using real money.</p>
+
+        <div class="form-grid">
+          <label>
+            Coin
+            <select id="btSymbol">
+              <option value="BTCUSDT">BTC/USDT</option>
+              <option value="ETHUSDT">ETH/USDT</option>
+              <option value="BNBUSDT">BNB/USDT</option>
+              <option value="SOLUSDT">SOL/USDT</option>
+              <option value="XRPUSDT">XRP/USDT</option>
+            </select>
+          </label>
+          <label>
+            Timeframe
+            <select id="btInterval">
+              <option value="1h">1 Hour</option>
+              <option value="4h">4 Hours</option>
+              <option value="1d">1 Day</option>
+            </select>
+          </label>
+          <label>
+            Strategy
+            <select id="btStrategy">
+              <option value="RSI">RSI (Oversold/Overbought)</option>
+              <option value="MA_CROSS">MA Crossover</option>
+              <option value="COMBINED">Combined (RSI + MA)</option>
+            </select>
+          </label>
+          <label>
+            Starting Balance (USDT)
+            <input type="number" id="btBalance" value="1000" min="10" />
+          </label>
+          <label>
+            Stop Loss %
+            <input type="number" id="btStopLoss" value="2" min="0.5" max="20" step="0.5" />
+          </label>
+          <label>
+            Take Profit %
+            <input type="number" id="btTakeProfit" value="4" min="0.5" max="50" step="0.5" />
+          </label>
+          <label>
+            Candles to analyse
+            <select id="btLimit">
+              <option value="200">200 candles</option>
+              <option value="500" selected>500 candles</option>
+              <option value="1000">1000 candles</option>
+            </select>
+          </label>
+        </div>
+
+        <button class="btn-primary" id="runBacktest">&#x25B6; Run Backtest</button>
+      </div>
+
+      <!-- Results -->
+      <div id="backtestResults" class="hidden">
+        <div class="stats-grid" id="statsGrid"></div>
+        <div class="card chart-card">
+          <h3>Equity Curve (Your Balance Over Time)</h3>
+          <div class="chart-wrap">
+            <canvas id="equityChart"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <h3>Last 50 Trades</h3>
+          <div class="table-wrap">
+            <table class="trade-table" id="backtestTradeTable">
+              <thead>
+                <tr>
+                  <th>Type</th><th>Entry Price</th><th>Exit Price</th>
+                  <th>P&amp;L (USDT)</th><th>P&amp;L %</th><th>Reason</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── PORTFOLIO PAGE ── -->
+    <section id="page-portfolio" class="page">
+      <div class="portfolio-header">
+        <div class="card stat-card" id="balanceCard">
+          <div class="stat-label">Available Balance</div>
+          <div class="stat-value" id="paperBalance">—</div>
+        </div>
+        <div class="card stat-card" id="investedCard">
+          <div class="stat-label">Total Invested</div>
+          <div class="stat-value" id="paperInvested">—</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-label">Portfolio Value</div>
+          <div class="stat-value" id="paperTotal">—</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>&#x1F4B0; Quick Trade (Paper)</h3>
+        <div class="trade-form">
+          <select id="tradeSymbol">
+            <option value="BTCUSDT">BTC/USDT</option>
+            <option value="ETHUSDT">ETH/USDT</option>
+            <option value="BNBUSDT">BNB/USDT</option>
+            <option value="SOLUSDT">SOL/USDT</option>
+            <option value="XRPUSDT">XRP/USDT</option>
+          </select>
+          <input type="number" id="tradeAmount" placeholder="USDT amount" min="10" value="100" />
+          <button class="btn-buy" id="buyBtn">&#x25B2; BUY</button>
+          <button class="btn-sell" id="sellBtn">&#x25BC; SELL</button>
+        </div>
+        <div id="tradeMsg" class="trade-msg"></div>
+      </div>
+
+      <div class="card">
+        <div class="positions-header">
+          <h3>Open Positions</h3>
+          <button class="btn-ghost" id="resetPortfolio">Reset Portfolio</button>
+        </div>
+        <div class="table-wrap">
+          <table class="trade-table" id="positionsTable">
+            <thead>
+              <tr><th>Coin</th><th>Qty</th><th>Entry Price</th><th>Cost</th><th>Current</th><th>P&amp;L</th><th>Action</th></tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="empty">No open positions</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ── TRADES PAGE ── -->
+    <section id="page-trades" class="page">
+      <div class="card">
+        <h2>&#x1F4CB; Trade History</h2>
+        <div class="table-wrap">
+          <table class="trade-table" id="tradesTable">
+            <thead>
+              <tr><th>Type</th><th>Coin</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>Win?</th><th>Time</th></tr>
+            </thead>
+            <tbody><tr><td colspan="7" class="empty">No trades yet</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Loading overlay -->
+  <div class="loading-overlay hidden" id="loadingOverlay">
+    <div class="spinner"></div>
+    <p id="loadingMsg">Running backtest...</p>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

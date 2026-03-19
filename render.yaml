@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: crypto-bot
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: TRADE_MODE
+        value: paper
+      - key: PAPER_BALANCE
+        value: "1000"
