@@ -199,6 +199,23 @@ label select, label input { color: var(--text); }
 @keyframes spin { to { transform: rotate(360deg); } }
 .loading-overlay p { color: var(--text); font-size: 0.9rem; }
 
+/* ── Alerts Page ─────────────────────────────────────────────────────────────── */
+.alert-status-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.alert-info-card {
+  background: var(--bg3); border-radius: 10px; padding: 14px; text-align: center;
+}
+.alert-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.sample-alerts { display: flex; flex-direction: column; gap: 12px; }
+.sample-alert {
+  padding: 16px; border-radius: 10px; font-size: 0.88rem; line-height: 1.7;
+  border-left: 4px solid;
+}
+.sample-buy { background: rgba(63,185,80,0.08); border-color: var(--green); }
+.sample-sell { background: rgba(248,81,73,0.08); border-color: var(--red); }
+
 .hidden { display: none !important; }
 
 /* ── Responsive ─────────────────────────────────────────────────────────────── */

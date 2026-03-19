@@ -11,6 +11,7 @@ const axios = require('axios');
 const binance = require('./bot/binance');
 const backtest = require('./bot/backtest');
 const paperTrader = require('./bot/paperTrader');
+const alerter = require('./bot/alerter');
 
 const app = express();
 const server = http.createServer(app);
@@ -160,6 +161,29 @@ app.post('/api/paper/reset', (req, res) => {
   res.json({ ok: true, message: 'Portfolio reset' });
 });
 
+// Send test Telegram alert
+app.post('/api/alert/test', async (req, res) => {
+  try {
+    const token  = process.env.TELEGRAM_TOKEN;
+    const chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!token || !chatId) return res.status(400).json({ ok: false, error: 'Telegram not configured' });
+    await alerter.sendTestAlert(token, chatId);
+    res.json({ ok: true, message: 'Test alert sent to Telegram' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// Manually trigger alert check
+app.post('/api/alert/check', async (req, res) => {
+  try {
+    await alerter.runAlertCheck();
+    res.json({ ok: true, message: 'Signal check complete' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ── WebSocket — push live prices every 15s ────────────────────────────────────
 
 const WATCHED_SYMBOLS = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
@@ -192,6 +216,19 @@ function startKeepAlive() {
   console.log(`♻️  Keep-alive active → pinging ${url} every 14 min`);
 }
 
+// ── Alert Scheduler — checks signals every hour ───────────────────────────────
+
+function startAlertScheduler() {
+  const token  = process.env.TELEGRAM_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+  if (!token || !chatId) return;
+
+  // Run immediately on startup, then every hour
+  setTimeout(alerter.runAlertCheck, 5000);
+  setInterval(alerter.runAlertCheck, 60 * 60 * 1000);
+  console.log('📲 Telegram alerts active — checking signals every hour');
+}
+
 // ── Start ─────────────────────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 4000;
@@ -201,4 +238,5 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`💰 Paper balance: $${process.env.PAPER_BALANCE || 1000} USDT`);
   console.log(`🔐 Password protection: ON\n`);
   startKeepAlive();
+  startAlertScheduler();
 });

@@ -451,6 +451,49 @@ async function loadTrades() {
   }
 }
 
+// ── Alerts Page ───────────────────────────────────────────────────────────────
+
+function showAlertMsg(msg, type = 'ok') {
+  const el = document.getElementById('alertMsg');
+  el.textContent = msg;
+  el.className = 'trade-msg ' + type;
+  setTimeout(() => { el.textContent = ''; el.className = 'trade-msg'; }, 5000);
+}
+
+document.getElementById('testAlertBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('testAlertBtn');
+  btn.disabled = true;
+  btn.textContent = 'Sending...';
+  try {
+    const res = await fetch('/api/alert/test', { method: 'POST' });
+    const json = await res.json();
+    if (json.ok) showAlertMsg('Test message sent! Check your Telegram.', 'ok');
+    else showAlertMsg('Error: ' + json.error, 'err');
+  } catch (err) {
+    showAlertMsg('Failed to send: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '📤 Send Test Message to Telegram';
+  }
+});
+
+document.getElementById('checkNowBtn').addEventListener('click', async () => {
+  const btn = document.getElementById('checkNowBtn');
+  btn.disabled = true;
+  btn.textContent = 'Checking...';
+  try {
+    const res = await fetch('/api/alert/check', { method: 'POST' });
+    const json = await res.json();
+    if (json.ok) showAlertMsg('Signal check complete. If RSI triggered, you got a Telegram message.', 'ok');
+    else showAlertMsg('Error: ' + json.error, 'err');
+  } catch (err) {
+    showAlertMsg('Failed: ' + err.message, 'err');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔍 Check Signals Now';
+  }
+});
+
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 connectWS();

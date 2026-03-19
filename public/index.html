@@ -26,6 +26,7 @@
     <button class="nav-btn" data-page="backtest">Backtest</button>
     <button class="nav-btn" data-page="portfolio">Portfolio</button>
     <button class="nav-btn" data-page="trades">Trade History</button>
+    <button class="nav-btn" data-page="alerts">&#x1F4F2; Alerts</button>
   </nav>
 
   <!-- MAIN -->
@@ -220,6 +221,63 @@
     </section>
 
   </main>
+
+    <!-- ── ALERTS PAGE ── -->
+    <section id="page-alerts" class="page">
+      <div class="card">
+        <h2>&#x1F4F2; Telegram Signal Alerts</h2>
+        <p class="subtitle">The bot checks BTC, ETH, SOL, XRP and BNB every hour. You get a Telegram message when RSI signals a buy or sell.</p>
+
+        <div class="alert-status-grid">
+          <div class="alert-info-card">
+            <div class="stat-label">Status</div>
+            <div class="stat-value up">&#x25CF; Active</div>
+            <div class="stat-sub">Checking every hour</div>
+          </div>
+          <div class="alert-info-card">
+            <div class="stat-label">Buy Signal Trigger</div>
+            <div class="stat-value">RSI &lt; 30</div>
+            <div class="stat-sub">Oversold — price likely to bounce</div>
+          </div>
+          <div class="alert-info-card">
+            <div class="stat-label">Sell Signal Trigger</div>
+            <div class="stat-value">RSI &gt; 70</div>
+            <div class="stat-sub">Overbought — price may reverse</div>
+          </div>
+          <div class="alert-info-card">
+            <div class="stat-label">Cooldown</div>
+            <div class="stat-value">4 Hours</div>
+            <div class="stat-sub">Per coin — no spam</div>
+          </div>
+        </div>
+
+        <div class="alert-actions">
+          <button class="btn-primary" id="testAlertBtn">&#x1F4E4; Send Test Message to Telegram</button>
+          <button class="btn-ghost" id="checkNowBtn">&#x1F50D; Check Signals Now</button>
+        </div>
+        <div class="trade-msg" id="alertMsg"></div>
+      </div>
+
+      <div class="card">
+        <h3>&#x1F4CB; What the Messages Look Like</h3>
+        <div class="sample-alerts">
+          <div class="sample-alert sample-buy">
+            <strong>🟢 BUY SIGNAL — BTC/USDT</strong><br/>
+            📉 RSI: <strong>27.4</strong> (Oversold — below 30)<br/>
+            💵 Price: <strong>$98,200.00</strong><br/><br/>
+            The market may be oversold. Consider buying.<br/>
+            ⚠️ Always set a stop loss (2%) before entering.
+          </div>
+          <div class="sample-alert sample-sell">
+            <strong>🔴 SELL SIGNAL — ETH/USDT</strong><br/>
+            📈 RSI: <strong>74.1</strong> (Overbought — above 70)<br/>
+            💵 Price: <strong>$3,850.00</strong><br/><br/>
+            The market may be overbought. Consider taking profit.<br/>
+            ⚠️ Only sell what you're comfortable letting go.
+          </div>
+        </div>
+      </div>
+    </section>
 
   <!-- Loading overlay -->
   <div class="loading-overlay hidden" id="loadingOverlay">
