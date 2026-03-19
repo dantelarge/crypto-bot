@@ -3,7 +3,11 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_FILE = path.join(__dirname, '../data/paper_portfolio.json');
+const DATA_DIR = path.join(__dirname, '../data');
+const DATA_FILE = path.join(DATA_DIR, 'paper_portfolio.json');
+
+// Create data directory if it doesn't exist
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 
 function loadState() {
   try {
