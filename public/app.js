@@ -55,6 +55,7 @@ document.querySelectorAll('.nav-btn').forEach(btn => {
       page.classList.add('active');
       if (btn.dataset.page === 'portfolio') loadPortfolio();
       if (btn.dataset.page === 'trades') loadTrades();
+      if (btn.dataset.page === 'tracker') loadSignalTracker();
     }
   });
 });
@@ -450,6 +451,80 @@ async function loadTrades() {
     console.error(err);
   }
 }
+
+// ── Signal Tracker ────────────────────────────────────────────────────────────
+
+async function loadSignalTracker() {
+  try {
+    const res  = await fetch('/api/signals');
+    const json = await res.json();
+    if (!json.ok) return;
+    const d = json.data;
+
+    // Stats
+    document.getElementById('stTotal').textContent   = d.total;
+    document.getElementById('stWins').textContent    = d.wins;
+    document.getElementById('stLosses').textContent  = d.losses;
+    document.getElementById('stPending').textContent = d.pending;
+
+    const wrEl = document.getElementById('stWinRate');
+    if (d.winRate !== null) {
+      wrEl.textContent  = d.winRate + '%';
+      wrEl.className    = 'stat-value ' + (d.winRate >= 50 ? 'up' : 'down');
+    } else {
+      wrEl.textContent = 'N/A';
+    }
+
+    const avgEl = document.getElementById('stAvgPnl');
+    if (d.avgPnl !== null) {
+      avgEl.textContent = (d.avgPnl >= 0 ? '+' : '') + d.avgPnl + '%';
+      avgEl.className   = 'stat-value ' + (d.avgPnl >= 0 ? 'up' : 'down');
+    } else {
+      avgEl.textContent = 'N/A';
+    }
+
+    // Table
+    const tbody = document.querySelector('#trackerTable tbody');
+    if (!d.signals.length) {
+      tbody.innerHTML = '<tr><td colspan="8" class="empty">No signals yet. Alerts fire every hour when RSI triggers.</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = d.signals.map(s => {
+      const coin    = escapeHtml(s.symbol.replace('USDT', '/USDT'));
+      const sigClass = s.type === 'BUY' ? 'buy-tag' : 'sell-tag';
+      const date    = fmtTime(s.timestamp);
+
+      let priceAfter = '⏳ Pending';
+      let pnlCell    = '—';
+      let resultCell = '<span style="color:var(--text2)">⏳ 24hrs</span>';
+
+      if (s.resolved) {
+        priceAfter = fmtPrice(s.priceAfter);
+        pnlCell    = `<span class="${s.pnlPct >= 0 ? 'up' : 'down'}">${s.pnlPct >= 0 ? '+' : ''}${s.pnlPct}%</span>`;
+        resultCell = s.win
+          ? '<span class="win-tag">✅ WIN</span>'
+          : '<span class="loss-tag">❌ LOSS</span>';
+      }
+
+      return `<tr>
+        <td>${coin}</td>
+        <td class="${sigClass}">${escapeHtml(s.type)}</td>
+        <td>${s.rsi}</td>
+        <td>${fmtPrice(s.priceAtAlert)}</td>
+        <td>${priceAfter}</td>
+        <td>${pnlCell}</td>
+        <td>${resultCell}</td>
+        <td>${date}</td>
+      </tr>`;
+    }).join('');
+
+  } catch (err) {
+    console.error('Signal tracker error:', err);
+  }
+}
+
+document.getElementById('refreshTracker').addEventListener('click', loadSignalTracker);
 
 // ── Alerts Page ───────────────────────────────────────────────────────────────
 

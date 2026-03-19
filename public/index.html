@@ -27,6 +27,7 @@
     <button class="nav-btn" data-page="portfolio">Portfolio</button>
     <button class="nav-btn" data-page="trades">Trade History</button>
     <button class="nav-btn" data-page="alerts">&#x1F4F2; Alerts</button>
+    <button class="nav-btn" data-page="tracker">&#x1F4C8; Signal Tracker</button>
   </nav>
 
   <!-- MAIN -->
@@ -221,6 +222,40 @@
     </section>
 
   </main>
+
+    <!-- ── SIGNAL TRACKER PAGE ── -->
+    <section id="page-tracker" class="page">
+
+      <div class="stats-grid" id="trackerStats">
+        <div class="card stat-card"><div class="stat-label">Total Signals</div><div class="stat-value" id="stTotal">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Win Rate</div><div class="stat-value" id="stWinRate">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Wins</div><div class="stat-value up" id="stWins">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Losses</div><div class="stat-value down" id="stLosses">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Avg P&amp;L</div><div class="stat-value" id="stAvgPnl">—</div></div>
+        <div class="card stat-card"><div class="stat-label">Pending</div><div class="stat-value" id="stPending">—</div><div class="stat-sub">resolves in 24hrs</div></div>
+      </div>
+
+      <div class="card">
+        <div class="positions-header">
+          <h3>All Signals</h3>
+          <button class="btn-ghost" id="refreshTracker">&#x21BB; Refresh</button>
+        </div>
+        <p class="subtitle">Every signal the bot fires is logged here. After 24 hours, the result (WIN/LOSS) is automatically calculated.</p>
+        <div class="table-wrap">
+          <table class="trade-table" id="trackerTable">
+            <thead>
+              <tr>
+                <th>Coin</th><th>Signal</th><th>RSI</th>
+                <th>Price at Alert</th><th>Price After 24h</th>
+                <th>P&amp;L %</th><th>Result</th><th>Date</th>
+              </tr>
+            </thead>
+            <tbody><tr><td colspan="8" class="empty">No signals yet. Alerts fire every hour when RSI triggers.</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+    </section>
 
     <!-- ── ALERTS PAGE ── -->
     <section id="page-alerts" class="page">

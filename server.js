@@ -11,7 +11,8 @@ const axios = require('axios');
 const binance = require('./bot/binance');
 const backtest = require('./bot/backtest');
 const paperTrader = require('./bot/paperTrader');
-const alerter = require('./bot/alerter');
+const alerter       = require('./bot/alerter');
+const signalTracker = require('./bot/signalTracker');
 
 const app = express();
 const server = http.createServer(app);
@@ -182,6 +183,11 @@ app.post('/api/alert/check', async (req, res) => {
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
   }
+});
+
+// Signal tracker — get all signals + stats
+app.get('/api/signals', (req, res) => {
+  res.json({ ok: true, data: signalTracker.getStats() });
 });
 
 // ── WebSocket — push live prices every 15s ────────────────────────────────────
