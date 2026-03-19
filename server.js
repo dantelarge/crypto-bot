@@ -179,7 +179,7 @@ async function broadcastPrices() {
   } catch (_) {}
 }
 
-setInterval(broadcastPrices, 15000);
+setInterval(broadcastPrices, 60000);
 
 // ── Keep-Alive (prevents Render free tier from sleeping) ──────────────────────
 

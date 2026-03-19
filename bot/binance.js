@@ -4,18 +4,32 @@ const axios = require('axios');
 
 const BASE = 'https://api.coingecko.com/api/v3';
 
-// Map trading symbols → CoinGecko IDs
+// ── Simple in-memory cache ────────────────────────────────────────────────────
+const cache = {};
+
+function cacheGet(key) {
+  const entry = cache[key];
+  if (!entry) return null;
+  if (Date.now() > entry.expiresAt) { delete cache[key]; return null; }
+  return entry.data;
+}
+
+function cacheSet(key, data, ttlMs) {
+  cache[key] = { data, expiresAt: Date.now() + ttlMs };
+}
+
+// ── Symbol map ────────────────────────────────────────────────────────────────
 const SYMBOL_MAP = {
-  BTCUSDT:  'bitcoin',
-  ETHUSDT:  'ethereum',
-  BNBUSDT:  'binancecoin',
-  SOLUSDT:  'solana',
-  XRPUSDT:  'ripple',
-  ADAUSDT:  'cardano',
-  DOGEUSDT: 'dogecoin',
-  DOTUSDT:  'polkadot',
-  MATICUSDT:'matic-network',
-  LTCUSDT:  'litecoin'
+  BTCUSDT:   'bitcoin',
+  ETHUSDT:   'ethereum',
+  BNBUSDT:   'binancecoin',
+  SOLUSDT:   'solana',
+  XRPUSDT:   'ripple',
+  ADAUSDT:   'cardano',
+  DOGEUSDT:  'dogecoin',
+  DOTUSDT:   'polkadot',
+  MATICUSDT: 'matic-network',
+  LTCUSDT:   'litecoin'
 };
 
 function toId(symbol) {
@@ -24,7 +38,6 @@ function toId(symbol) {
   return id;
 }
 
-// Map interval → { days, interval } for market_chart endpoint
 function intervalToParams(interval) {
   switch (interval) {
     case '1h':  return { days: 14,  interval: 'hourly' };
@@ -35,32 +48,38 @@ function intervalToParams(interval) {
   }
 }
 
-// Fetch live price for a single symbol
+// ── API calls with caching ────────────────────────────────────────────────────
+
+// Single price — cache 60 seconds
 async function fetchSinglePrice(symbol) {
+  const key = `price_${symbol}`;
+  const cached = cacheGet(key);
+  if (cached !== null) return cached;
+
   const id = toId(symbol);
   const res = await axios.get(`${BASE}/simple/price`, {
     params: { ids: id, vs_currencies: 'usd' }
   });
-  return res.data[id].usd;
+  const price = res.data[id].usd;
+  cacheSet(key, price, 60_000);
+  return price;
 }
 
-// Fetch live prices + 24hr stats for multiple symbols
+// Multiple prices — cache 60 seconds
 async function fetchPrices(symbols) {
+  const key = `prices_${symbols.join(',')}`;
+  const cached = cacheGet(key);
+  if (cached !== null) return cached;
+
   const ids = symbols.map(toId).join(',');
   const res = await axios.get(`${BASE}/coins/markets`, {
-    params: {
-      vs_currency: 'usd',
-      ids,
-      order: 'market_cap_desc',
-      price_change_percentage: '24h'
-    }
+    params: { vs_currency: 'usd', ids, order: 'market_cap_desc', price_change_percentage: '24h' }
   });
 
-  // Re-map back to symbol format
   const idToSymbol = {};
   symbols.forEach(s => { idToSymbol[SYMBOL_MAP[s]] = s; });
 
-  return res.data.map(c => ({
+  const data = res.data.map(c => ({
     symbol: idToSymbol[c.id] || c.id,
     price: c.current_price,
     change24h: c.price_change_percentage_24h || 0,
@@ -68,16 +87,23 @@ async function fetchPrices(symbols) {
     low24h: c.low_24h,
     volume24h: c.total_volume
   }));
+
+  cacheSet(key, data, 60_000);
+  return data;
 }
 
-// Fetch 24hr ticker stats for one symbol
+// 24hr ticker — cache 60 seconds
 async function fetchTicker24hr(symbol) {
+  const key = `ticker_${symbol}`;
+  const cached = cacheGet(key);
+  if (cached !== null) return cached;
+
   const id = toId(symbol);
   const res = await axios.get(`${BASE}/coins/markets`, {
     params: { vs_currency: 'usd', ids: id }
   });
   const c = res.data[0];
-  return {
+  const data = {
     symbol,
     price: c.current_price,
     high: c.high_24h,
@@ -86,27 +112,32 @@ async function fetchTicker24hr(symbol) {
     changePct: c.price_change_percentage_24h,
     volume: c.total_volume
   };
+  cacheSet(key, data, 60_000);
+  return data;
 }
 
-// Fetch historical price data using market_chart (more reliable on free tier)
+// Historical klines — cache 5 minutes
 async function fetchKlines(symbol, interval = '1h', limit = 500) {
+  const key = `klines_${symbol}_${interval}`;
+  const cached = cacheGet(key);
+  if (cached !== null) return cached.slice(-limit);
+
   const id = toId(symbol);
   const { days, interval: cgInterval } = intervalToParams(interval);
   const res = await axios.get(`${BASE}/coins/${id}/market_chart`, {
     params: { vs_currency: 'usd', days, interval: cgInterval }
   });
 
-  const prices = res.data.prices; // [[timestamp, price], ...]
-
+  const prices = res.data.prices;
   const candles = prices.map((p, i, arr) => {
     const close = p[1];
     const open  = i > 0 ? arr[i - 1][1] : close;
-    // Approximate high/low from open and close
     const high  = Math.max(open, close) * 1.003;
     const low   = Math.min(open, close) * 0.997;
     return { openTime: p[0], open, high, low, close, volume: 0, closeTime: p[0] };
   });
 
+  cacheSet(key, candles, 5 * 60_000);
   return candles.slice(-limit);
 }
 
